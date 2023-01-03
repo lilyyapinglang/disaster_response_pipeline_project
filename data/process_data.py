@@ -74,6 +74,7 @@ def clean_data(df):
     print(
         'duplicated rows after removing: {}'.format(
             df.duplicated().value_counts()))
+    assert len(df[df.duplicated()]) == 0
     return df
 
 
