@@ -1,32 +1,25 @@
+'''packages needed in training model'''
 import pickle
+import re
+import sys
+from sqlalchemy import create_engine, inspect
+import pandas as pd
+
 from sklearn.model_selection import GridSearchCV
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import classification_report
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+
+import nltk
+from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
-import pandas as pd
-import numpy as np
-import re
-from nltk.corpus import stopwords
-import sys
-import pandas as pd
-from sqlalchemy import create_engine, inspect
-import nltk
-'''
-# code snippet to resolve ssl console error
-import ssl
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
-else:
-    ssl._create_default_https_context = _create_unverified_https_context
-'''
 nltk.download(['stopwords', 'punkt', 'wordnet'])
+
+
 
 
 # load data from database
@@ -52,16 +45,14 @@ def load_data(database_filepath):
 
 
 # Tokenization function to process text data of 'message'
-'''
-In order to shorten the length of the vocabulary, we usually choose the following methods:
- -Ignore case
- -Ignore punctuation
- -Remove meaningless words, such as a the of
- -Fix spelling errors (to implement in next version)
- -Take out the tense (to implement in next version)
- -n-gram vocabulary merge (to implement in next version)
-'''
 
+#In order to shorten the length of the vocabulary, we usually choose the following methods:
+#-Ignore case
+#-Ignore punctuation
+#-Remove meaningless words, such as a the of
+#-Fix spelling errors (to implement in next version)
+#-Take out the tense (to implement in next version)
+#-n-gram vocabulary merge (to implement in next version)
 
 def tokenize(text):
     # regrex to identify url in text
@@ -125,6 +116,9 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    '''
+    Print classification report for each of 36 categories of trained model
+    '''
     # print classification report for positive labels
     Y_pred = model.predict(X_test)
     for i in range(len(Y_test.columns) - 1):

@@ -1,9 +1,10 @@
+"""Module providingFunction printing python version."""
 import json
+import re
 import plotly
-import sys
 import pandas as pd
 import numpy as np
-import re
+
 
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
@@ -11,18 +12,27 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 
 from flask import Flask
-from flask import render_template, request, jsonify
+from flask import render_template, request
 from plotly.graph_objs import Bar
 import joblib
-#sys.modules['sklearn.externals.joblib'] = joblib
 from sqlalchemy import create_engine
 
 
 app = Flask(__name__)
 
+# tokenizer function to tokenize and lemmatize the text, including remove
+# urls, punctuation, stopwords
+
 
 def tokenize(text):
+    '''
+    tokenizer function to tokenize and lemmatize the text, including remove urls, punctuation, stopwords
 
+    Input:
+    text    text in string format
+    Output:
+    clean_tokens a list of meaningful tokens extracted from text
+    '''
     url_regex = r'http[s]?[ ]{0,}[:]{0,}[ ]{0,}[//]{0,}(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
     # get list of all urls in text using regex
     detected_urls = re.findall(url_regex, text)
@@ -30,9 +40,12 @@ def tokenize(text):
     # replace each url in text string with placeholder
     for url in detected_urls:
         text = text.replace(url, 'urlplaceholder')
+    # remove punctuation
     text = re.sub('[^A-Za-z0-9]+', ' ', text)
+
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
+
     stop_words = set(stopwords.words('English'))
 
     clean_tokens = []
@@ -56,7 +69,9 @@ model = joblib.load("../models/classifier.pkl")
 @app.route('/')
 @app.route('/index')
 def index():
-
+    '''
+    Displays data visualizations and received user input text for model
+    '''
     # extract data needed for visuals
     # 1. data
     genre_counts = df.groupby('genre').count()['message']
@@ -64,7 +79,7 @@ def index():
 
     # 2. data for distribution count of every category
     df_categories = df.drop(['id', 'message', 'original', 'genre'], axis=1)
-    # for category = related, value set is 0,1,2; for category child_alone, there is only 0 ; for other categories
+    # for category = related, value set is 0,1,2; for category child_alone, there is only 0 ;
     # for other categories, value set is 0,1. Therefore transform values so
     # that sum of columns equals to counts of frequency.
     df_categories = df_categories.replace(
@@ -81,7 +96,7 @@ def index():
     bin_grid = np.arange(start=1, stop=21, step=1)
 
     # 4. data for get top 10 word tokens across all messages and its count
-    message_list = [text for text in df['message']]
+    message_list = list(df['message'])
     vect = CountVectorizer(tokenizer=tokenize)
     message_vectorized = vect.fit_transform(message_list)
     word_list = vect.get_feature_names_out()
@@ -92,6 +107,8 @@ def index():
     top10_count = [count_list[i] for i in top10_index]
 
     # create visuals for 4 data sets obtained above
+    # it may take around 14 seconds to load the last graph, as tokenize 20k+
+    # messages takes a bit time
     graphs = [
         {
             'data': [
@@ -169,15 +186,16 @@ def index():
 
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
-    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+    graph_json = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
 
     # render web page with plotly graphs
-    return render_template('master.html', ids=ids, graphJSON=graphJSON)
+    return render_template('master.html', ids=ids, graphJSON=graph_json)
 
 
 # web page that handles user query and displays model results
 @app.route('/go')
 def go():
+    ''' function that handles user query and dispalys model results'''
     # save user input in query
     query = request.args.get('query', '')
 
@@ -192,8 +210,8 @@ def go():
         classification_result=classification_results
     )
 
-
 def main():
+    '''entry function to run the app'''
     app.run(host='0.0.0.0', port=3001, debug=True)
 
 
