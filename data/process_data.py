@@ -22,8 +22,8 @@ def load_data(messages_filepath, categories_filepath):
     for column in categories:
         #set each value to be the last character of the string
         categories[column]= categories[column].astype(str).str[-1:]
-        #convert column from string to numeric
-        categories[column]=categories[column].astype(int)
+        #convert column from string to numeric, then convert non-binary value 2 to 1
+        categories[column]=categories[column].astype(int).replace(2,1)
     
     #Replace categories column in df with new category columns.
     # drop the original categories column from `df_merged`
@@ -49,7 +49,7 @@ def clean_data(df):
 def save_data(df, database_filename):
     # stores data in a SQLite database
     engine=create_engine('sqlite:///{}'.format(database_filename))
-    df.to_sql(database_filename,engine,index=False)
+    df.to_sql(database_filename,engine,index=False, if_exists='replace')
 
 
 def main():
